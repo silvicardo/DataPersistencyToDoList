@@ -8,7 +8,7 @@
 
 import UIKit
 
-class ToDoItem: NSObject {
+class ToDoItem: Codable {
 
     var titolo:  String = ""
     var fatto: Bool = false

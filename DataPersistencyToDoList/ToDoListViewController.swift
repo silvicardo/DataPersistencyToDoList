@@ -10,22 +10,15 @@ import UIKit
 
 class ToDoListViewController: UITableViewController {
 
-    /*VERSIONE NON FUNZIONANTE CON USER DEFAULTS CHE
-    NON ACCETTA OGGETTI MA SOLO I DATATYPES BASICI,
-    DA ESEGUIRE A PURO SCOPO DIMOSTRATIVO DELL'ERRORE*/
-    
     //array delle cose da fare
     var arrayOggetti = [ToDoItem]()
-    
-    let defaults = UserDefaults.standard
+    //Definiamo il percorso del nostro file plist all'interno della cartella Documents nella Sanbox dell'App
+    let percorsoFileDiDati = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first?.appendingPathComponent("ToDos.plist")
     
     override func viewDidLoad() {
         super.viewDidLoad()
-        
-        //carichiamo il nostro plist, se esiste
-        if let arraySalvato = defaults.array(forKey: "ToDoListArray") as? [ToDoItem] {
-            arrayOggetti = arraySalvato
-        }
+        //carichiamo i dati dal plist all'arrayOggetti
+        caricaDati()
     }
     
     //MARK: - Metodi della tableView
@@ -43,7 +36,7 @@ class ToDoListViewController: UITableViewController {
         let oggettoAttuale = arrayOggetti[indexPath.row]
         //il titolo sarà la stringa nell'array all'indice attuale
         cell.textLabel?.text = oggettoAttuale.titolo
-        //ad ogni aggiornamento della table il checkmark rispecchierà lo stato della proprietà "fatto"
+        
         cell.accessoryType = oggettoAttuale.fatto == true ? .checkmark : .none
         
         //restituiamo e mostriamo la cella
@@ -56,13 +49,15 @@ class ToDoListViewController: UITableViewController {
         //gestisci checkmark
         //se tocchiamo la cella lo stato fatto dell'istanza del model sarà uguale al contrario di se stessa
         arrayOggetti[indexPath.row].fatto = !arrayOggetti[indexPath.row].fatto
+        //salviamo
+        self.salva()
         
         tableView.reloadData()
         //deseleziona la cella
         tableView.deselectRow(at: indexPath, animated: true)
         
     }
-   
+    
     //MARK: - IBActions
     
     @IBAction func bottoneAggiungiPremuto(_ sender: UIBarButtonItem) {
@@ -78,8 +73,10 @@ class ToDoListViewController: UITableViewController {
                 nuovoToDo.titolo = testo
                 //e lo aggiungiamo all'array
                 self.arrayOggetti.append(nuovoToDo)
-                self.defaults.setValue(self.arrayOggetti, forKey: "ToDoListArray")
-                self.tableView.reloadData()//aggiornando la table
+                //usando il coder salviamo nel plist il nuovo stato di arrayOggetti
+                self.salva()
+                //aggiorniamo la table
+                self.tableView.reloadData()
             }}
         alert.addTextField { (alertTextField) in
             
@@ -91,5 +88,30 @@ class ToDoListViewController: UITableViewController {
         
     }
     
+    //MARK: - CARICAMENTO/SALVATAGGIO
+    
+    func salva() {
+        //usando il coder salviamo nel plist il nuovo stato di arrayOggetti
+        let encoder = PropertyListEncoder()
+        do {
+            let data = try encoder.encode(self.arrayOggetti)
+            try data.write(to:self.percorsoFileDiDati!)
+        } catch {
+            print("Errore nel salvataggio")
+        }
+    }
+    
+    func caricaDati() {
+        //usando il decoder estraiamo il contenuto del nostro plist e lo riversiamo in arrayOggetti
+        if let data = try? Data(contentsOf: percorsoFileDiDati!){
+            let decoder = PropertyListDecoder()
+            do{
+                arrayOggetti = try decoder.decode([ToDoItem].self, from: data)
+            } catch {
+                print("Errore di caricamento")
+            }
+        }
+        
+    }
 }
 
