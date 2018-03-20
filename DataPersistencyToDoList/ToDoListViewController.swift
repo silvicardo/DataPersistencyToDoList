@@ -43,7 +43,7 @@ class ToDoListViewController: UITableViewController {
         let oggettoAttuale = arrayOggetti[indexPath.row]
         //il titolo sarà la stringa nell'array all'indice attuale
         cell.textLabel?.text = oggettoAttuale.titolo
-        
+        //ad ogni aggiornamento della table il checkmark rispecchierà lo stato della proprietà "fatto"
         cell.accessoryType = oggettoAttuale.fatto == true ? .checkmark : .none
         
         //restituiamo e mostriamo la cella
@@ -55,15 +55,8 @@ class ToDoListViewController: UITableViewController {
     override func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         //gestisci checkmark
         //se tocchiamo la cella lo stato fatto dell'istanza del model sarà uguale al contrario di se stessa
-        !arrayOggetti[indexPath.row].fatto = !arrayOggetti[indexPath.row].fatto
+        arrayOggetti[indexPath.row].fatto = !arrayOggetti[indexPath.row].fatto
         
-        if tableView.cellForRow(at: indexPath)?.accessoryType == .checkmark {
-            
-            tableView.cellForRow(at: indexPath)?.accessoryType = .none
-            
-        } else {
-            tableView.cellForRow(at: indexPath)?.accessoryType = .checkmark
-        }
         tableView.reloadData()
         //deseleziona la cella
         tableView.deselectRow(at: indexPath, animated: true)
