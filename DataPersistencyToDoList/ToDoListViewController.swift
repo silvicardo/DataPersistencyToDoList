@@ -14,11 +14,15 @@ class ToDoListViewController: UITableViewController {
     //array delle cose da fare
     var arrayOggetti = ["Compra cialde","Ricarica Telefono", "Trova telecomando"]
     
-    
+    let defaults = UserDefaults.standard
     
     override func viewDidLoad() {
         super.viewDidLoad()
         
+        //carichiamo il nostro plist, se esiste
+        if let arraySalvato = defaults.array(forKey: "ToDoListArray") as? [String] {
+            arrayOggetti = arraySalvato
+        }
     }
     
     //MARK: - Metodi della tableView
@@ -65,6 +69,7 @@ class ToDoListViewController: UITableViewController {
             //quando premeremo il bottone aggiungeremo una nuova ToDo all'array dal textField
             if let testo = textField.text {
                 self.arrayOggetti.append(testo)
+                self.defaults.setValue(self.arrayOggetti, forKey: "ToDoListArray")
                 self.tableView.reloadData()//aggiornando la table
             }}
         alert.addTextField { (alertTextField) in
