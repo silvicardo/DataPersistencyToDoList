@@ -10,9 +10,12 @@ import UIKit
 
 class ToDoListViewController: UITableViewController {
 
+    /*VERSIONE NON FUNZIONANTE CON USER DEFAULTS CHE
+    NON ACCETTA OGGETTI MA SOLO I DATATYPES BASICI,
+    DA ESEGUIRE A PURO SCOPO DIMOSTRATIVO DELL'ERRORE*/
     
     //array delle cose da fare
-    var arrayOggetti = ["Compra cialde","Ricarica Telefono", "Trova telecomando"]
+    var arrayOggetti = [ToDoItem]()
     
     let defaults = UserDefaults.standard
     
@@ -20,7 +23,7 @@ class ToDoListViewController: UITableViewController {
         super.viewDidLoad()
         
         //carichiamo il nostro plist, se esiste
-        if let arraySalvato = defaults.array(forKey: "ToDoListArray") as? [String] {
+        if let arraySalvato = defaults.array(forKey: "ToDoListArray") as? [ToDoItem] {
             arrayOggetti = arraySalvato
         }
     }
@@ -37,9 +40,12 @@ class ToDoListViewController: UITableViewController {
         //definiamo la cella
         let cell = tableView.dequeueReusableCell(withIdentifier: "ToDoItemCell", for: indexPath)
         
+        let oggettoAttuale = arrayOggetti[indexPath.row]
         //il titolo sarà la stringa nell'array all'indice attuale
-        cell.textLabel?.text = arrayOggetti[indexPath.row]
-
+        cell.textLabel?.text = oggettoAttuale.titolo
+        
+        cell.accessoryType = oggettoAttuale.fatto == true ? .checkmark : .none
+        
         //restituiamo e mostriamo la cella
         return cell
         
@@ -48,11 +54,17 @@ class ToDoListViewController: UITableViewController {
     
     override func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         //gestisci checkmark
+        //se tocchiamo la cella lo stato fatto dell'istanza del model sarà uguale al contrario di se stessa
+        !arrayOggetti[indexPath.row].fatto = !arrayOggetti[indexPath.row].fatto
+        
         if tableView.cellForRow(at: indexPath)?.accessoryType == .checkmark {
+            
             tableView.cellForRow(at: indexPath)?.accessoryType = .none
+            
         } else {
             tableView.cellForRow(at: indexPath)?.accessoryType = .checkmark
         }
+        tableView.reloadData()
         //deseleziona la cella
         tableView.deselectRow(at: indexPath, animated: true)
         
@@ -68,7 +80,11 @@ class ToDoListViewController: UITableViewController {
         let action = UIAlertAction(title: "Aggiungi", style: .cancel){ (action) in
             //quando premeremo il bottone aggiungeremo una nuova ToDo all'array dal textField
             if let testo = textField.text {
-                self.arrayOggetti.append(testo)
+                //creiamo un nuovo oggetto
+                let nuovoToDo = ToDoItem()
+                nuovoToDo.titolo = testo
+                //e lo aggiungiamo all'array
+                self.arrayOggetti.append(nuovoToDo)
                 self.defaults.setValue(self.arrayOggetti, forKey: "ToDoListArray")
                 self.tableView.reloadData()//aggiornando la table
             }}
