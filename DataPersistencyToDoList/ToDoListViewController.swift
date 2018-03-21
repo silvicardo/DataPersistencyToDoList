@@ -142,9 +142,8 @@ class ToDoListViewController: UITableViewController {
         self.tableView.reloadData()
     }
     
-    func caricaDati() {
-        //creiamo una richiesta
-        let request: NSFetchRequest<ToDoItem> = ToDoItem.fetchRequest()
+    func caricaDati(con request: NSFetchRequest<ToDoItem> = ToDoItem.fetchRequest()) {
+        //data la fetchRequest di default o dell'utente
         //che produrrà un array di oggetti risultato
         //di tipo "ToDoItem"(la nostra Entity)
         do {
@@ -154,6 +153,50 @@ class ToDoListViewController: UITableViewController {
         } catch  {
             print("Errore durante il caricamento, problema: \(error)")
         }
+        //aggiorniamo la table
+        self.tableView.reloadData()
     }
+    
 }
 
+//MARK: - Metodi SearchBar
+
+extension ToDoListViewController: UISearchBarDelegate {
+    
+    
+    func searchBarSearchButtonClicked(_ searchBar: UISearchBar) {
+        DispatchQueue.main.async {
+            //mettiamo giù la tastiera attiva per l'editing della searchBar
+            searchBar.resignFirstResponder()
+        }
+    }
+    
+    
+//    func searchBarCancelButtonClicked(_ searchBar: UISearchBar) {
+//        caricaDati()
+//    }
+    
+    func searchBar(_ searchBar: UISearchBar, textDidChange searchText: String) {
+        if searchBar.text?.count == 0 {
+            caricaDati()
+            DispatchQueue.main.async {
+                //mettiamo giù la tastiera attiva per l'editing della searchBar
+                searchBar.resignFirstResponder()
+            }
+        } else {
+            //definiamo una richiesta di ricerca che restituisca istanze di ToDoItem
+            let request: NSFetchRequest<ToDoItem> = ToDoItem.fetchRequest()
+            //definiamo il metro secondo cui saranno restituiti dei risultati
+            //il predicato controllerà se per ogni istanza della nostra Entity
+            //la proprietà titolo conterrà il valore che l'utente ha digitato nella searchBar
+            request.predicate = NSPredicate(format: "titolo CONTAINS[cd] %@", searchBar.text!)
+            //i dati resitituiti vengono ordinati alfabeticamente (ascendente)
+            request.sortDescriptors = [NSSortDescriptor(key: "titolo", ascending: true)]
+            //effettuiamo la ricerca da noi settata
+            caricaDati(con: request)
+        }
+    }
+    
+    
+    
+}
