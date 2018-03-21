@@ -7,17 +7,24 @@
 //
 
 import UIKit
+import CoreData
 
 class ToDoListViewController: UITableViewController {
 
-    //array delle cose da fare
+    //array delle cose da fare, conterrà istanze del DataModel
     var arrayOggetti = [ToDoItem]()
-    //Definiamo il percorso del nostro file plist all'interno della cartella Documents nella Sanbox dell'App
-    let percorsoFileDiDati = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first?.appendingPathComponent("ToDos.plist")
+   
+    //Accediamo tramite la lazy var persistentContainer al contesto (del nostro DataModel)
+    //in cui possiamo applicare modifiche
+    let context = (UIApplication.shared.delegate as! AppDelegate).persistentContainer.viewContext
     
     override func viewDidLoad() {
         super.viewDidLoad()
-        //carichiamo i dati dal plist all'arrayOggetti
+        
+        //stampa in console percorso DataBase SQL
+        print(FileManager.default.urls(for: .documentDirectory, in: .userDomainMask))
+        
+        //riempiamo l'arrayOggetti con il contenuto del nostro Database
         caricaDati()
     }
     
@@ -34,9 +41,11 @@ class ToDoListViewController: UITableViewController {
         let cell = tableView.dequeueReusableCell(withIdentifier: "ToDoItemCell", for: indexPath)
         
         let oggettoAttuale = arrayOggetti[indexPath.row]
+        
         //il titolo sarà la stringa nell'array all'indice attuale
         cell.textLabel?.text = oggettoAttuale.titolo
         
+        //il checkmark rifletterà lo stato della proprietà "fatto"
         cell.accessoryType = oggettoAttuale.fatto == true ? .checkmark : .none
         
         //restituiamo e mostriamo la cella
@@ -47,71 +56,104 @@ class ToDoListViewController: UITableViewController {
     
     override func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         //gestisci checkmark
+        
         //se tocchiamo la cella lo stato fatto dell'istanza del model sarà uguale al contrario di se stessa
         arrayOggetti[indexPath.row].fatto = !arrayOggetti[indexPath.row].fatto
-        //salviamo
-        self.salva()
         
-        tableView.reloadData()
+        //salviamo e ricarichiamo la table
+        self.salvaDati()
+        
         //deseleziona la cella
         tableView.deselectRow(at: indexPath, animated: true)
         
     }
     
+    override func tableView(_ tableView: UITableView, editActionsForRowAt indexPath: IndexPath) -> [UITableViewRowAction]? {
+        
+        let oggettoAttuale = arrayOggetti[indexPath.row]
+    
+        //si crea un istanza di UitableViewRowAction, si assegna uno stile,
+        //si assegna un nome e si crea il codice da eseguire alla selezione del comando
+        let deleteAction = UITableViewRowAction(style: UITableViewRowActionStyle.default, title: "Elimina", handler: {(action, indexPath) -> Void in
+            //rimuoviamo l'elemento dal context poi dall'array
+            self.context.delete(oggettoAttuale)
+            self.arrayOggetti.remove(at: indexPath.row)
+            //rimuoviamo la cella attuale
+            tableView.deleteRows(at: [indexPath], with: .fade)
+            //salviamo i dati ricaricando la table
+            self.salvaDati()
+            })
+        
+        //restituiamo l'array di UITableViewRowAction da mostrare
+        
+        return [deleteAction]
+    }
     //MARK: - IBActions
     
     @IBAction func bottoneAggiungiPremuto(_ sender: UIBarButtonItem) {
+       
         //creiamo una variabile locale per acquisire la nuova Todo
         var textField = UITextField()
-        //creiamo l'alert con un textField
+        
+        //creiamo un UIAlertController  con un textField
         let alert = UIAlertController(title: "Aggiungi un nuovo ToDo", message: "", preferredStyle: .alert)
+        //definiamo l'azione al tocco del pulsante aggiungi
         let action = UIAlertAction(title: "Aggiungi", style: .cancel){ (action) in
             //quando premeremo il bottone aggiungeremo una nuova ToDo all'array dal textField
             if let testo = textField.text {
-                //creiamo un nuovo oggetto
-                let nuovoToDo = ToDoItem()
-                nuovoToDo.titolo = testo
-                //e lo aggiungiamo all'array
-                self.arrayOggetti.append(nuovoToDo)
-                //usando il coder salviamo nel plist il nuovo stato di arrayOggetti
-                self.salva()
-                //aggiorniamo la table
-                self.tableView.reloadData()
+               
+                //creiamo una nuova istanza del database nel context
+                //definendo ogni valore(non sono opzionali)
+                let nuovoToDoItem = ToDoItem(context: self.context)
+                
+                nuovoToDoItem.titolo = testo
+                
+                nuovoToDoItem.fatto = false
+                
+                //Aggiungiamo all'array e salviamo
+                self.arrayOggetti.append(nuovoToDoItem)
+        
+                self.salvaDati()
+                
             }}
+        //aggiungiamo un textfield all'UIAlertController
         alert.addTextField { (alertTextField) in
             
             alertTextField.placeholder = "Crea un nuovo ToDo"
             textField = alertTextField
         }
+        //aggiungiamol'azione all'UIAlertController
         alert.addAction(action)
         present(alert, animated: true, completion: nil)
         
     }
     
-    //MARK: - CARICAMENTO/SALVATAGGIO
+    //MARK: - Metodi Gestione Dati con CoreData
     
-    func salva() {
-        //usando il coder salviamo nel plist il nuovo stato di arrayOggetti
-        let encoder = PropertyListEncoder()
+    func salvaDati() {
+        //salva le modifiche nel context
         do {
-            let data = try encoder.encode(self.arrayOggetti)
-            try data.write(to:self.percorsoFileDiDati!)
-        } catch {
-            print("Errore nel salvataggio")
+            try context.save()
+        } catch  {
+            print("Errore durante il salvataggio nel Context, problema: \(error)")
         }
+        
+        //aggiorniamo la table
+        self.tableView.reloadData()
     }
     
     func caricaDati() {
-        //usando il decoder estraiamo il contenuto del nostro plist e lo riversiamo in arrayOggetti
-        if let data = try? Data(contentsOf: percorsoFileDiDati!){
-            let decoder = PropertyListDecoder()
-            do{
-                arrayOggetti = try decoder.decode([ToDoItem].self, from: data)
-            } catch {
-                print("Errore di caricamento")
-            }
+        //creiamo una richiesta
+        let request: NSFetchRequest<ToDoItem> = ToDoItem.fetchRequest()
+        //che produrrà un array di oggetti risultato
+        //di tipo "ToDoItem"(la nostra Entity)
+        do {
+            //l'array delle cose da fare corrisponderà
+            //al risultato di tale richiesta
+            arrayOggetti =  try context.fetch(request)
+        } catch  {
+            print("Errore durante il caricamento, problema: \(error)")
         }
-        
     }
 }
 
