@@ -10,10 +10,18 @@ import UIKit
 import CoreData
 
 class ToDoListViewController: UITableViewController {
-
+    
     //array delle cose da fare, conterrà istanze del DataModel
     var arrayOggetti = [ToDoItem]()
-   
+    
+    //var ponte dal CategorieViewController(opzionale)
+    var categoriaSelezionata : Categoria? {
+        //con didSet definiamo l'azione alla creazione della var
+        didSet {
+            //riempiamo l'arrayOggetti con il contenuto del nostro Database
+            caricaDati()
+        }
+    }
     //Accediamo tramite la lazy var persistentContainer al contesto (del nostro DataModel)
     //in cui possiamo applicare modifiche
     let context = (UIApplication.shared.delegate as! AppDelegate).persistentContainer.viewContext
@@ -24,8 +32,7 @@ class ToDoListViewController: UITableViewController {
         //stampa in console percorso DataBase SQL
         print(FileManager.default.urls(for: .documentDirectory, in: .userDomainMask))
         
-        //riempiamo l'arrayOggetti con il contenuto del nostro Database
-        caricaDati()
+        
     }
     
     //MARK: - Metodi della tableView
@@ -71,7 +78,7 @@ class ToDoListViewController: UITableViewController {
     override func tableView(_ tableView: UITableView, editActionsForRowAt indexPath: IndexPath) -> [UITableViewRowAction]? {
         
         let oggettoAttuale = arrayOggetti[indexPath.row]
-    
+        
         //si crea un istanza di UitableViewRowAction, si assegna uno stile,
         //si assegna un nome e si crea il codice da eseguire alla selezione del comando
         let deleteAction = UITableViewRowAction(style: UITableViewRowActionStyle.default, title: "Elimina", handler: {(action, indexPath) -> Void in
@@ -82,7 +89,7 @@ class ToDoListViewController: UITableViewController {
             tableView.deleteRows(at: [indexPath], with: .fade)
             //salviamo i dati ricaricando la table
             self.salvaDati()
-            })
+        })
         
         //restituiamo l'array di UITableViewRowAction da mostrare
         
@@ -91,7 +98,7 @@ class ToDoListViewController: UITableViewController {
     //MARK: - IBActions
     
     @IBAction func bottoneAggiungiPremuto(_ sender: UIBarButtonItem) {
-       
+        
         //creiamo una variabile locale per acquisire la nuova Todo
         var textField = UITextField()
         
@@ -101,7 +108,7 @@ class ToDoListViewController: UITableViewController {
         let action = UIAlertAction(title: "Aggiungi", style: .cancel){ (action) in
             //quando premeremo il bottone aggiungeremo una nuova ToDo all'array dal textField
             if let testo = textField.text {
-               
+                
                 //creiamo una nuova istanza del database nel context
                 //definendo ogni valore(non sono opzionali)
                 let nuovoToDoItem = ToDoItem(context: self.context)
@@ -110,9 +117,11 @@ class ToDoListViewController: UITableViewController {
                 
                 nuovoToDoItem.fatto = false
                 
+                nuovoToDoItem.categoriaMadre = self.categoriaSelezionata
+                
                 //Aggiungiamo all'array e salviamo
                 self.arrayOggetti.append(nuovoToDoItem)
-        
+                
                 self.salvaDati()
                 
             }}
@@ -142,9 +151,29 @@ class ToDoListViewController: UITableViewController {
         self.tableView.reloadData()
     }
     
-    func caricaDati(con request: NSFetchRequest<ToDoItem> = ToDoItem.fetchRequest()) {
+    ///è ora possibile aggiungere un predicato extra per rendere la funzione utilizzabile
+    ///sia per il classico caricamento dati che per l'utilizzo della searchBar
+    ///ora che abbiamo introdotto un sistema di Categorie
+    func caricaDati(con request: NSFetchRequest<ToDoItem> = ToDoItem.fetchRequest(), predicate: NSPredicate? = nil) {
+        
+        //appartenendo ora ad una categoria aggiungiamo un filtro.
+        //Restituiamo gli oggetti dell'array il cui nome della categoria madre
+        //corrisponde al nome della categoria in ingresso
+        let predicatoCategoria = NSPredicate(format: "categoriaMadre.nome MATCHES[cd] %@", categoriaSelezionata!.nome!)
+        
+        //con optionalBinding
+        //se il predicato input ha un valore
+        if let predicatoAggiuntivo = predicate {
+            //il predicato finale sarà uguale a  un oggetto definito da un insieme di predicati
+            //di cui uno sarà il predicato categoria e l'altro il predicato input opzionale
+            request.predicate = NSCompoundPredicate(andPredicateWithSubpredicates: [predicatoCategoria, predicatoAggiuntivo])
+        } else {//altrimenti se nil
+            //il predicato finale sarà uguale al solo predicatoCategoria
+            request.predicate = predicatoCategoria
+        }
+        
         //data la fetchRequest di default o dell'utente
-        //che produrrà un array di oggetti risultato
+        //produrrà un array di oggetti risultato
         //di tipo "ToDoItem"(la nostra Entity)
         do {
             //l'array delle cose da fare corrisponderà
@@ -170,11 +199,6 @@ extension ToDoListViewController: UISearchBarDelegate {
             searchBar.resignFirstResponder()
         }
     }
-    
-    
-//    func searchBarCancelButtonClicked(_ searchBar: UISearchBar) {
-//        caricaDati()
-//    }
     
     func searchBar(_ searchBar: UISearchBar, textDidChange searchText: String) {
         if searchBar.text?.count == 0 {

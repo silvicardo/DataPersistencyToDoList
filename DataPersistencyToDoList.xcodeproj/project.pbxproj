@@ -13,6 +13,7 @@
 		BE0BBE19206179D000371E89 /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = BE0BBE17206179D000371E89 /* Main.storyboard */; };
 		BE0BBE1B206179D100371E89 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = BE0BBE1A206179D100371E89 /* Assets.xcassets */; };
 		BE0BBE1E206179D100371E89 /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = BE0BBE1C206179D100371E89 /* LaunchScreen.storyboard */; };
+		BE63C8EC2062D4F700F9B3BE /* CategorieViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = BE63C8EB2062D4F700F9B3BE /* CategorieViewController.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -24,6 +25,7 @@
 		BE0BBE1A206179D100371E89 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		BE0BBE1D206179D100371E89 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/LaunchScreen.storyboard; sourceTree = "<group>"; };
 		BE0BBE1F206179D100371E89 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		BE63C8EB2062D4F700F9B3BE /* CategorieViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CategorieViewController.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -57,6 +59,7 @@
 			isa = PBXGroup;
 			children = (
 				BE0BBE13206179D000371E89 /* AppDelegate.swift */,
+				BE63C8EB2062D4F700F9B3BE /* CategorieViewController.swift */,
 				BE0BBE15206179D000371E89 /* ToDoListViewController.swift */,
 				BE0BBE272061920000371E89 /* DataModel */,
 				BE0BBE17206179D000371E89 /* Main.storyboard */,
@@ -148,6 +151,7 @@
 			files = (
 				BE0BBE16206179D000371E89 /* ToDoListViewController.swift in Sources */,
 				7B713A42206271A300EEB280 /* DataModel.xcdatamodeld in Sources */,
+				BE63C8EC2062D4F700F9B3BE /* CategorieViewController.swift in Sources */,
 				BE0BBE14206179D000371E89 /* AppDelegate.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
